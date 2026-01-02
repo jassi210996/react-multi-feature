@@ -27,11 +27,16 @@ jobs:
             }
 
             for (const commit of commits) {
-              await github.rest.repos.createCommitComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                commit_sha: commit.id,
-                body: 'Automated review started for this commit.'
-              });
-              core.info(`Started review for commit ${commit.id}`);
+              try {
+                await github.rest.repos.createCommitComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: commit.id,
+                  body: 'Automated review started for this commit.'
+                });
+                core.info(`Started review for commit ${commit.id}`);
+              } catch (error) {
+                const message = error?.message ?? String(error);
+                core.warning(`Failed to start review for commit ${commit.id}: ${message}`);
+              }
             }
