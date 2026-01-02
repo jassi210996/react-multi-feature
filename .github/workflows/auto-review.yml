@@ -36,7 +36,12 @@ jobs:
                 });
                 core.info(`Started review for commit ${commit.id}`);
               } catch (error) {
+                const status = error?.status ?? error?.response?.status;
                 const message = error?.message ?? String(error);
-                core.warning(`Failed to start review for commit ${commit.id}: ${message}`);
+                if (status === 404) {
+                  core.info(`Commit ${commit.id} no longer exists (possibly due to a force push); skipping review. Original error: ${message}`);
+                } else {
+                  core.warning(`Failed to start review for commit ${commit.id}: ${message}`);
+                }
               }
             }
