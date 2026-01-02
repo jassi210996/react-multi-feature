@@ -1,4 +1,4 @@
-name: Automated Commit Review
+name: Commit Review Tracker
 
 on:
   push:
