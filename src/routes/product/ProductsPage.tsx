@@ -41,7 +41,7 @@ const ProductsPage = () => {
 				className='mb-4 p-2 border border-gray-300 rounded w-full'
 				onChange={(event) => setSearchQuery(event.target.value)}
 			/>
-			{isLoading && <div className='text-center py-4'>Loading...</div>}
+			{isLoading && <div className='text-center py-4'>Loading.....</div>}
 			{error && (
 				<div className='text-red-500 text-center py-4'>
 					Error loading posts
