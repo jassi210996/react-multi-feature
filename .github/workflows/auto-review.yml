@@ -28,21 +28,25 @@ jobs:
               return;
             }
 
-            const instruction = `\
-#### Copilot Review Instructions\n\n
-Focus the review on:\n
-- Code redundancy: unused variables, duplicate state, unnecessary effects.\n
-- Unoptimal React patterns: missing memoization, heavy computations in render, repeated fetches.\n
-- React best practices violations: incorrect hook dependencies, derived state anti-patterns, incorrect keys in lists, improper error/loading handling.\n
-- Smallest actionable changes: suggest precise removals or refactors (e.g., remove an unneeded \`useEffect\`, convert state to derived value, inline trivial wrappers).\n\n
-Also check:\n
-- Data fetching: use \`AbortController\`, avoid race conditions, handle \`isLoading\`/\`error\` explicitly.\n
-- Performance: function recreation; use \`useCallback\`/\`useMemo\` only when beneficial; avoid over-memoization.\n
-- Styling: Tailwind v4 usage (\`@import "tailwindcss"\`), remove unused classes.\n
-- HTTP: merge headers safely so defaults (e.g., \`Content-Type\`) aren’t overridden.\n\n
-Output format:\n
-- List issues with file:line references and brief rationale.\n
-- Provide minimal diffs or one-liner suggestions where possible.`;
+            const instruction = [
+              '#### Copilot Review Instructions',
+              '',
+              'Focus the review on:',
+              '- Code redundancy: unused variables, duplicate state, unnecessary effects.',
+              '- Unoptimal React patterns: missing memoization, heavy computations in render, repeated fetches.',
+              '- React best practices violations: incorrect hook dependencies, derived state anti-patterns, incorrect keys in lists, improper error/loading handling.',
+              '- Smallest actionable changes: suggest precise removals or refactors (e.g., remove an unneeded `useEffect`, convert state to derived value, inline trivial wrappers).',
+              '',
+              'Also check:',
+              '- Data fetching: use `AbortController`, avoid race conditions, handle `isLoading`/`error` explicitly.',
+              '- Performance: function recreation; use `useCallback`/`useMemo` only when beneficial; avoid over-memoization.',
+              '- Styling: Tailwind v4 usage (`@import "tailwindcss"`), remove unused classes.',
+              '- HTTP: merge headers safely so defaults (e.g., `Content-Type`) aren’t overridden.',
+              '',
+              'Output format:',
+              '- List issues with file:line references and brief rationale.',
+              '- Provide minimal diffs or one-liner suggestions where possible.'
+            ].join('\n');
 
             for (const commit of commits) {
               try {
@@ -81,22 +85,26 @@ Output format:\n
               return;
             }
 
-            const body = `\
-#### Copilot Review Instructions\n\n
-Please review this PR focusing on:\n
-- Code redundancy and smallest removals (unneeded state/effects, unused vars).\n
-- Unoptimal code and React performance pitfalls.\n
-- Violations of React best practices (hooks dependencies, derived state, list keys).\n\n
-Specific checks:\n
-- \`useEffect\`/\`useMemo\`/\`useCallback\`: unnecessary usage or missing deps; suggest removals.\n
-- Derived state: avoid duplicating props in state; compute when rendering.\n
-- Re-renders: function recreation; memoize only where it helps.\n
-- Data fetching: abort on re-renders/unmount; prevent races; clear errors/loading.\n
-- Tailwind v4: valid import; remove unused classes.\n
-- HTTP headers: merge defaults safely.\n\n
-Output:\n
-- Bullet list with file:line references and brief rationale.\n
-- Minimal diffs or one-liner suggestions.`;
+            const body = [
+              '#### Copilot Review Instructions',
+              '',
+              'Please review this PR focusing on:',
+              '- Code redundancy and smallest removals (unneeded state/effects, unused vars).',
+              '- Unoptimal code and React performance pitfalls.',
+              '- Violations of React best practices (hooks dependencies, derived state, list keys).',
+              '',
+              'Specific checks:',
+              '- `useEffect`/`useMemo`/`useCallback`: unnecessary usage or missing deps; suggest removals.',
+              '- Derived state: avoid duplicating props in state; compute when rendering.',
+              '- Re-renders: function recreation; memoize only where it helps.',
+              '- Data fetching: abort on re-renders/unmount; prevent races; clear errors/loading.',
+              '- Tailwind v4: valid import; remove unused classes.',
+              '- HTTP headers: merge defaults safely.',
+              '',
+              'Output:',
+              '- Bullet list with file:line references and brief rationale.',
+              '- Minimal diffs or one-liner suggestions.'
+            ].join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
