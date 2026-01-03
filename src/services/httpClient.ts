@@ -1,9 +1,11 @@
+const baseUrl = 'https://dummyjson.com';
+
 const httpClient = async <T>(url: string, options: RequestInit): Promise<T> => {
-	const response = await fetch(url, {
+	const response = await fetch(baseUrl + url, {
 		...options,
 		headers: {
 			'Content-Type': 'application/json',
-			...options.headers,
+			...{ ...(options.headers ?? {}) },
 		},
 	});
 	if (!response.ok) {

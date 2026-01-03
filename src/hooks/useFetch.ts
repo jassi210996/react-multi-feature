@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import httpClient from '../services/httpClient';
 
-const useFetch = <T>(url: string, init?: RequestInit) => {
+type UseFetchOptions = {
+	autoFetch?: boolean;
+};
+
+const useFetch = <T>(url: string, init?: RequestInit, options?: UseFetchOptions) => {
+	const { autoFetch = true } = options || {};
 	const [response, setResponse] = useState<T | null>(null);
 	const [error, setError] = useState<unknown>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -25,6 +30,15 @@ const useFetch = <T>(url: string, init?: RequestInit) => {
 			setIsLoading(false);
 		}
 	}, [url, init]);
+
+	useEffect(() => {
+		if (autoFetch) {
+			fetchData();
+		}
+		return () => {
+			if (abortRef.current) abortRef.current.abort();
+		};
+	}, [autoFetch, fetchData]);
 
 	return { response, error, isLoading, refetch: fetchData };
 };

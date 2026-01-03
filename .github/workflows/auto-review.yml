@@ -1,9 +1,11 @@
-name: Commit Review Tracker
+name: Copilot Auto Review
 
 on:
   push:
     branches:
       - '**'
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   start-review:
@@ -26,22 +28,97 @@ jobs:
               return;
             }
 
+            const instruction = `\
+#### Copilot Review Instructions\n\n
+Focus the review on:\n
+- Code redundancy: unused variables, duplicate state, unnecessary effects.\n
+- Unoptimal React patterns: missing memoization, heavy computations in render, repeated fetches.\n
+- React best practices violations: incorrect hook dependencies, derived state anti-patterns, incorrect keys in lists, improper error/loading handling.\n
+- Smallest actionable changes: suggest precise removals or refactors (e.g., remove an unneeded \`useEffect\`, convert state to derived value, inline trivial wrappers).\n\n
+Also check:\n
+- Data fetching: use \`AbortController\`, avoid race conditions, handle \`isLoading\`/\`error\` explicitly.\n
+- Performance: function recreation; use \`useCallback\`/\`useMemo\` only when beneficial; avoid over-memoization.\n
+- Styling: Tailwind v4 usage (\`@import "tailwindcss"\`), remove unused classes.\n
+- HTTP: merge headers safely so defaults (e.g., \`Content-Type\`) aren’t overridden.\n\n
+Output format:\n
+- List issues with file:line references and brief rationale.\n
+- Provide minimal diffs or one-liner suggestions where possible.`;
+
             for (const commit of commits) {
               try {
                 await github.rest.repos.createCommitComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   commit_sha: commit.id,
-                  body: 'Automated review tracking comment created for this commit.'
+                  body: instruction
                 });
-                core.info(`Started review for commit ${commit.id}`);
+                core.info(`Posted Copilot review instructions for commit ${commit.id}`);
               } catch (error) {
                 const status = error?.status ?? error?.response?.status;
                 const message = error?.message ?? String(error);
                 if (status === 404) {
                   core.info(`Commit ${commit.id} no longer exists (possibly due to a force push); skipping review. Original error: ${message}`);
                 } else {
-                  core.warning(`Failed to start review for commit ${commit.id}: ${message}`);
+                  core.warning(`Failed to post instructions for commit ${commit.id}: ${message}`);
                 }
               }
+            }
+
+  copilot-react-pr-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Post Copilot review instructions on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull request found in event payload.');
+              return;
+            }
+
+            const body = `\
+#### Copilot Review Instructions\n\n
+Please review this PR focusing on:\n
+- Code redundancy and smallest removals (unneeded state/effects, unused vars).\n
+- Unoptimal code and React performance pitfalls.\n
+- Violations of React best practices (hooks dependencies, derived state, list keys).\n\n
+Specific checks:\n
+- \`useEffect\`/\`useMemo\`/\`useCallback\`: unnecessary usage or missing deps; suggest removals.\n
+- Derived state: avoid duplicating props in state; compute when rendering.\n
+- Re-renders: function recreation; memoize only where it helps.\n
+- Data fetching: abort on re-renders/unmount; prevent races; clear errors/loading.\n
+- Tailwind v4: valid import; remove unused classes.\n
+- HTTP headers: merge defaults safely.\n\n
+Output:\n
+- Bullet list with file:line references and brief rationale.\n
+- Minimal diffs or one-liner suggestions.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number
+            });
+
+            const existing = comments.find(c => c.user?.type === 'Bot' && c.body?.includes('Copilot Review Instructions'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info('Updated existing Copilot review instruction comment.');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body
+              });
+              core.info('Created Copilot review instruction comment on PR.');
             }
